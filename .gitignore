@@ -1,0 +1,65 @@
+# ==============================================================================
+# Goan Konkani Dialect Classifier - .gitignore
+# Excludes heavy audio datasets, model weights, documents, and report builders
+# ==============================================================================
+
+# --- 1. Dataset Audio & Large Archives ---
+dataset/processed_wavs/
+dataset/raw_temp/
+dataset/raw_hf_metadata.jsonl
+TEST_AUDIO_SAMPLES/
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.ogg
+*.aac
+*.zip
+*.tar
+*.gz
+
+# --- 2. Model Checkpoints & Weights (> 100MB) ---
+*.pt
+*.pth
+*.bin
+*.onnx
+checkpoints/
+
+# --- 3. Word Documents & PDF Files ---
+*.docx
+*.doc
+*.pdf
+
+# --- 4. Project Report Generator Scripts & Report Markdown Files ---
+PROJECT_REPORT_*.md
+UNIFIED_MASTER_*.md
+DATA_PIPELINE_AND_VIVA_DEFENSE_GUIDE*.md
+DATA_PREPARATION_AND_EDA_PIPELINE*.md
+MODEL_ARCHITECTURE_AND_BENCHMARKS*.md
+unified_report/
+diagrams/
+generate_data_preparation_doc.py
+generate_mega_50page_report.py
+generate_model_training_doc.py
+generate_unified_mega_master_report.py
+build_full_project_report.py
+render_plantuml_diagrams.py
+
+# --- 5. Python Environment & OS Cache ---
+venv/
+myenv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+*.log
+backend_server.log
+flagged/
+5/
+tools/
+torch.hub.load
+
+# --- 6. Compiled Java Classes ---
+*.class
+*copy*
+*.tmp
