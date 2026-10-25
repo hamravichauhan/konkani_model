@@ -1,8 +1,10 @@
-# Goan Konkani Regional Dialect Classifier
+# Goan Konkani Dialect Identification Using Speech Audio
 
 Deep Acoustic Neural Classification for Goan Konkani Regional Dialects using Meta's MMS-300M (wav2vec 2.0 Transformer Architecture).
 
-Developed as a Final Year Capstone Engineering Project | Department of Computer Science & Engineering.
+Goa University — Master of Computer Applications (MCA) | Academic Year 2026–2027  
+Under the guidance of **Mr. Hanumant Redkar**  
+Project Undertaken By: **Ravi Ramsamuj Chauhan** (2637), **Samidha Mote** (2643), **Olivia Fernandes** (2632)
 
 ---
 

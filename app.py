@@ -451,10 +451,10 @@ def predict_voice(audio_file):
         return f"⚠️ **Error processing audio:** {str(e)}", "", {}, None
 
 # Gradio Interactive Interface
-with gr.Blocks(title="Goan Konkani Dialect Classifier", theme=gr.themes.Soft()) as demo:
+with gr.Blocks(title="Goan Konkani Dialect Identification Using Speech Audio", theme=gr.themes.Soft()) as demo:
     gr.Markdown(
         """
-        # 🎙️ Goan Konkani Dialect & Region Classifier
+        # 🎙️ Goan Konkani Dialect Identification Using Speech Audio
         **Speak into your microphone** or upload an audio clip. The audio is automatically **denoised, trimmed of background hum**, and analyzed by the **MMS Neural Classifier** to identify the **Dialect** and **Geographic Origin in Goa**.
         """
     )

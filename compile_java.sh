@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Goan Konkani Dialect Classifier - Java Compilation & Packaging Script
+# Goan Konkani Dialect Identification Using Speech Audio - Java Build & Packaging
 # ==============================================================================
 set -e
 

@@ -148,7 +148,7 @@ def generate_prediction_rationale(dialect_name: str, confidence: float, sorted_r
     }
 
 app = FastAPI(
-    title="Goan Konkani Dialect Classifier AI API",
+    title="Goan Konkani Dialect Identification Using Speech Audio API",
     description="High-performance backend API serving foundation transformer models for Goan Konkani dialect identification",
     version="2.0.0"
 )
@@ -288,14 +288,14 @@ def load_audio_waveform(path: str):
 
 @app.on_event("startup")
 def startup_event():
-    print(f"[INFO] Initializing Konkani Dialect Classifier Backend on {device}...")
+    print(f"[INFO] Initializing Goan Konkani Dialect Identification Backend on {device}...")
     models = get_loaded_models()
     print(f"[INFO] Models initialized: {list(models.keys())}")
 
 @app.get("/")
 def root():
     return {
-        "service": "Goan Konkani Dialect Classifier API",
+        "service": "Goan Konkani Dialect Identification Using Speech Audio API",
         "status": "online",
         "device": str(device),
         "active_models": list(loaded_models.keys()),

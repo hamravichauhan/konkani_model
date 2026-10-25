@@ -18,7 +18,7 @@ public class KonkaniDialectCLI {
     public static void main(String[] args) {
         if (args.length == 0) {
             System.out.println("==========================================================================");
-            System.out.println("   GOAN KONKANI REGIONAL DIALECT CLASSIFIER - JAVA CLI CLIENT");
+            System.out.println("   GOAN KONKANI DIALECT IDENTIFICATION USING SPEECH AUDIO - CLI");
             System.out.println("==========================================================================");
             System.out.println("Usage: java KonkaniDialectCLI <audio_file.wav> [model_choice]");
             System.out.println("  Models: ensemble (Dual v5+v6, default), tri (Tri-Engine v5+v6+v7), v7, v6, v5");

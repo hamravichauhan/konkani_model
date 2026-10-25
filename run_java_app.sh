@@ -8,7 +8,7 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
 
 echo "=============================================================================="
-echo "  GOAN KONKANI REGIONAL DIALECT CLASSIFIER - JAVA FRONTEND LAUNCHER"
+echo "  GOAN KONKANI DIALECT IDENTIFICATION USING SPEECH AUDIO - LAUNCHER"
 echo "=============================================================================="
 
 # 1. Check Python Virtual Environment

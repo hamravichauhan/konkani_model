@@ -70,7 +70,7 @@ public class KonkaniDialectClassifierApp extends JFrame {
     private int recordSeconds = 0;
 
     public KonkaniDialectClassifierApp() {
-        super("Goan Konkani Regional Dialect Classifier (Deep Acoustic Neural Architecture)");
+        super("Goan Konkani Dialect Identification Using Speech Audio");
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
@@ -118,8 +118,8 @@ public class KonkaniDialectClassifierApp extends JFrame {
         JPanel titleBlock = new JPanel(new GridLayout(2, 1, 0, 3));
         titleBlock.setOpaque(false);
 
-        JLabel titleLabel = new JLabel("GOAN KONKANI REGIONAL DIALECT CLASSIFIER");
-        titleLabel.setFont(getAppFont(Font.BOLD, 19));
+        JLabel titleLabel = new JLabel("GOAN KONKANI DIALECT IDENTIFICATION USING SPEECH AUDIO");
+        titleLabel.setFont(getAppFont(Font.BOLD, 17));
         titleLabel.setForeground(Color.WHITE);
 
         JLabel subLabel = new JLabel("Meta MMS-300M Deep Acoustic Transformer Architecture • 8 Regional Goan Dialects");
@@ -403,7 +403,7 @@ public class KonkaniDialectClassifierApp extends JFrame {
         telemetryLabel.setFont(getAppFont(Font.PLAIN, 11));
         telemetryLabel.setForeground(new Color(100, 116, 139));
 
-        JLabel copyLabel = new JLabel("Goa University CSE Capstone Project | Academic Year 2025–2026");
+        JLabel copyLabel = new JLabel("Goa University MCA | Guided by Mr Hanumant Redkar | 2026–2027");
         copyLabel.setFont(getAppFont(Font.PLAIN, 11));
         copyLabel.setForeground(new Color(148, 163, 184));
 
