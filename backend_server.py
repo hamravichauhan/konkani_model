@@ -224,6 +224,68 @@ def clean_audio_with_dsp(input_path: str):
     subprocess.run(fallback_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
     return out_wav
 
+def load_audio_waveform(path: str):
+    """
+    Robust audio loader that works independently of torchaudio backends / TorchCodec.
+    Priority order:
+    1. soundfile
+    2. Python standard library wave module (zero external dependencies, 100% reliable for PCM WAV)
+    3. scipy.io.wavfile
+    4. torchaudio.load (fallback)
+    Always returns (waveform_1d_tensor, sample_rate).
+    """
+    # 1. soundfile
+    try:
+        import soundfile as sf
+        data, sr = sf.read(path, dtype="float32")
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        return torch.from_numpy(data).float(), sr
+    except Exception:
+        pass
+
+    # 2. Python built-in wave module (standard library, zero dependencies)
+    try:
+        import wave
+        with wave.open(path, "rb") as wf:
+            sr = wf.getframerate()
+            n_ch = wf.getnchannels()
+            sampwidth = wf.getsampwidth()
+            frames = wf.readframes(wf.getnframes())
+            if sampwidth == 2:
+                data = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+            elif sampwidth == 4:
+                data = np.frombuffer(frames, dtype=np.int32).astype(np.float32) / 2147483648.0
+            elif sampwidth == 1:
+                data = (np.frombuffer(frames, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
+            else:
+                data = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+            if n_ch > 1:
+                data = data.reshape(-1, n_ch).mean(axis=1)
+            return torch.from_numpy(data).float(), sr
+    except Exception:
+        pass
+
+    # 3. scipy.io.wavfile
+    try:
+        from scipy.io import wavfile
+        sr, data = wavfile.read(path)
+        if data.dtype == np.int16:
+            data = data.astype(np.float32) / 32768.0
+        elif data.dtype == np.int32:
+            data = data.astype(np.float32) / 2147483648.0
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        return torch.from_numpy(data).float(), sr
+    except Exception:
+        pass
+
+    # 4. torchaudio.load fallback
+    waveform, sr = torchaudio.load(path)
+    if waveform.ndim > 1:
+        waveform = waveform.squeeze(0)
+    return waveform, sr
+
 @app.on_event("startup")
 def startup_event():
     print(f"[INFO] Initializing Konkani Dialect Classifier Backend on {device}...")
@@ -307,10 +369,14 @@ async def classify_audio(
     clean_wav = clean_audio_with_dsp(temp_in)
 
     try:
-        waveform, sr = torchaudio.load(clean_wav)
+        waveform, sr = load_audio_waveform(clean_wav)
         if sr != SAMPLE_RATE:
-            waveform = torchaudio.transforms.Resample(sr, SAMPLE_RATE)(waveform)
-        waveform = waveform.squeeze(0)
+            if waveform.ndim == 1:
+                waveform = torchaudio.transforms.Resample(sr, SAMPLE_RATE)(waveform.unsqueeze(0)).squeeze(0)
+            else:
+                waveform = torchaudio.transforms.Resample(sr, SAMPLE_RATE)(waveform)
+        if waveform.ndim > 1:
+            waveform = waveform.squeeze(0)
         duration_sec = float(len(waveform) / SAMPLE_RATE)
 
         chunk_len = int(MAX_AUDIO_SEC * SAMPLE_RATE)

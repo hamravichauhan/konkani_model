@@ -170,6 +170,64 @@ def load_model():
 
     return ensemble_models
 
+def load_audio_waveform(path: str):
+    """
+    Robust audio loader that works independently of torchaudio backends / TorchCodec.
+    Priority order:
+    1. soundfile
+    2. Python standard library wave module (zero external dependencies)
+    3. scipy.io.wavfile
+    4. torchaudio.load (fallback)
+    Always returns (waveform_1d_tensor, sample_rate).
+    """
+    try:
+        import soundfile as sf
+        data, sr = sf.read(path, dtype="float32")
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        return torch.from_numpy(data).float(), sr
+    except Exception:
+        pass
+
+    try:
+        import wave
+        with wave.open(path, "rb") as wf:
+            sr = wf.getframerate()
+            n_ch = wf.getnchannels()
+            sampwidth = wf.getsampwidth()
+            frames = wf.readframes(wf.getnframes())
+            if sampwidth == 2:
+                data = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+            elif sampwidth == 4:
+                data = np.frombuffer(frames, dtype=np.int32).astype(np.float32) / 2147483648.0
+            elif sampwidth == 1:
+                data = (np.frombuffer(frames, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
+            else:
+                data = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+            if n_ch > 1:
+                data = data.reshape(-1, n_ch).mean(axis=1)
+            return torch.from_numpy(data).float(), sr
+    except Exception:
+        pass
+
+    try:
+        from scipy.io import wavfile
+        sr, data = wavfile.read(path)
+        if data.dtype == np.int16:
+            data = data.astype(np.float32) / 32768.0
+        elif data.dtype == np.int32:
+            data = data.astype(np.float32) / 2147483648.0
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        return torch.from_numpy(data).float(), sr
+    except Exception:
+        pass
+
+    waveform, sr = torchaudio.load(path)
+    if waveform.ndim > 1:
+        waveform = waveform.squeeze(0)
+    return waveform, sr
+
 def safe_clean_and_convert_audio(audio_input):
     """
     4-Stage Studio Audio Preprocessing:
@@ -202,8 +260,8 @@ def safe_clean_and_convert_audio(audio_input):
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         # Verify cleaned audio has audible content (>1KB)
         if os.path.exists(out_wav) and os.path.getsize(out_wav) > 1024:
-            wf, sr = torchaudio.load(out_wav)
-            duration = wf.shape[1] / sr
+            wf, sr = load_audio_waveform(out_wav)
+            duration = float(len(wf) / sr)
             return out_wav, duration
         else:
             # Fallback if silence threshold was too aggressive
@@ -214,8 +272,8 @@ def safe_clean_and_convert_audio(audio_input):
                 out_wav
             ]
             subprocess.run(fallback_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-            wf, sr = torchaudio.load(out_wav)
-            return out_wav, wf.shape[1] / sr
+            wf, sr = load_audio_waveform(out_wav)
+            return out_wav, float(len(wf) / sr)
     except Exception as e:
         print("FFmpeg cleaning fallback:", e)
         cmd_basic = [
@@ -224,8 +282,8 @@ def safe_clean_and_convert_audio(audio_input):
             out_wav
         ]
         subprocess.run(cmd_basic, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-        wf, sr = torchaudio.load(out_wav)
-        return out_wav, wf.shape[1] / sr
+        wf, sr = load_audio_waveform(out_wav)
+        return out_wav, float(len(wf) / sr)
 
 def predict_voice(audio_file):
     if audio_file is None:
@@ -247,10 +305,14 @@ def predict_voice(audio_file):
 
     clean_wav, speech_dur = safe_clean_and_convert_audio(audio_file)
     try:
-        waveform, sr = torchaudio.load(clean_wav)
+        waveform, sr = load_audio_waveform(clean_wav)
         if sr != SAMPLE_RATE:
-            waveform = torchaudio.transforms.Resample(sr, SAMPLE_RATE)(waveform)
-        waveform = waveform.squeeze(0)
+            if waveform.ndim == 1:
+                waveform = torchaudio.transforms.Resample(sr, SAMPLE_RATE)(waveform.unsqueeze(0)).squeeze(0)
+            else:
+                waveform = torchaudio.transforms.Resample(sr, SAMPLE_RATE)(waveform)
+        if waveform.ndim > 1:
+            waveform = waveform.squeeze(0)
 
         chunk_len = int(MAX_AUDIO_SEC * SAMPLE_RATE)
         stride = int(3.5 * SAMPLE_RATE)  # 3.5s stride with 2.5s overlap

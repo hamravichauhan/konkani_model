@@ -158,6 +158,41 @@ def safe_convert_to_wav(audio_input):
         subprocess.run(cmd_basic, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         return out_wav
 
+def load_audio_waveform(path: str):
+    """Robust audio loader working independently of TorchCodec."""
+    try:
+        import soundfile as sf
+        data, sr = sf.read(path, dtype="float32")
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        return torch.from_numpy(data).float(), sr
+    except Exception:
+        pass
+    try:
+        import wave
+        with wave.open(path, "rb") as wf:
+            sr = wf.getframerate()
+            n_ch = wf.getnchannels()
+            sampwidth = wf.getsampwidth()
+            frames = wf.readframes(wf.getnframes())
+            if sampwidth == 2:
+                data = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+            elif sampwidth == 4:
+                data = np.frombuffer(frames, dtype=np.int32).astype(np.float32) / 2147483648.0
+            elif sampwidth == 1:
+                data = (np.frombuffer(frames, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
+            else:
+                data = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+            if n_ch > 1:
+                data = data.reshape(-1, n_ch).mean(axis=1)
+            return torch.from_numpy(data).float(), sr
+    except Exception:
+        pass
+    waveform, sr = torchaudio.load(path)
+    if waveform.ndim > 1:
+        waveform = waveform.squeeze(0)
+    return waveform, sr
+
 def predict(audio_path):
     if not os.path.exists(CHECKPOINT_PATH):
         print(f"Error: Checkpoint file not found at {CHECKPOINT_PATH}.")
@@ -172,7 +207,7 @@ def predict(audio_path):
 
     wav_clean_path = safe_convert_to_wav(audio_path)
     try:
-        waveform, sr = torchaudio.load(wav_clean_path)
+        waveform, sr = load_audio_waveform(wav_clean_path)
     except Exception as e:
         print(f"Error loading audio: {e}")
         return
@@ -181,9 +216,13 @@ def predict(audio_path):
             os.remove(wav_clean_path)
 
     if sr != SAMPLE_RATE:
-        waveform = torchaudio.transforms.Resample(sr, SAMPLE_RATE)(waveform)
+        if waveform.ndim == 1:
+            waveform = torchaudio.transforms.Resample(sr, SAMPLE_RATE)(waveform.unsqueeze(0)).squeeze(0)
+        else:
+            waveform = torchaudio.transforms.Resample(sr, SAMPLE_RATE)(waveform)
 
-    waveform = waveform.squeeze(0)
+    if waveform.ndim > 1:
+        waveform = waveform.squeeze(0)
     max_len = int(MAX_AUDIO_SEC * SAMPLE_RATE)
     if len(waveform) > max_len:
         waveform = waveform[:max_len]
