@@ -7,8 +7,6 @@
 dataset/processed_wavs/
 dataset/raw_temp/
 dataset/raw_hf_metadata.jsonl
-TEST_AUDIO_SAMPLES/
-*.wav
 *.mp3
 *.m4a
 *.flac
@@ -17,6 +15,11 @@ TEST_AUDIO_SAMPLES/
 *.zip
 *.tar
 *.gz
+*.wav
+
+# Un-ignore test presentation audio samples (~4.7MB total)
+!TEST_AUDIO_SAMPLES/
+!TEST_AUDIO_SAMPLES/**
 
 # --- 2. Model Checkpoints & Weights (> 100MB) ---
 *.pt
